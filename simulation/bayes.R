@@ -1,0 +1,246 @@
+library(MASS)
+# ---------------------- function --------------------
+# posterior parameter for normal + inverse-gamma
+posterior_norm_inv_gamma <- function(y, m0 = 0, k0 = 0.01, a0 = 0.001, b0 = 0.001) {
+  n   <- length(y)
+  ybar <- mean(y)
+  s2   <- var(y)
+  
+  k_n <- k0 + n
+  m_n <- (k0 * m0 + n * ybar) / k_n
+  a_n <- a0 + n / 2
+  
+  # sum of squares around prior mean (standard formula)
+  b_n <- b0 + 0.5 * ((n - 1) * s2 + (k0 * n / k_n) * (ybar - m0)^2)
+  
+  list(m_n = m_n, k_n = k_n, a_n = a_n, b_n = b_n)
+}
+
+# different mean model
+# draw R_post sets of (mu, sigma2) from posterior 
+draw_mu_sigma2 <- function(post_par, R_post = 5000) {
+  mu   <- numeric(R_post)
+  sig2 <- numeric(R_post)
+  
+  for (r in 1:R_post) {
+    sig2[r] <- 1 / rgamma(1, shape = post_par$a_n, rate = post_par$b_n)
+    mu[r]   <- rnorm(1, mean = post_par$m_n,
+                     sd = sqrt(sig2[r] / post_par$k_n))
+  }
+  list(mu = mu, sigma2 = sig2)
+}
+
+# compute bayes effect size
+bayes_effect_size <- function(yA, yB,
+                              R_post = 5000,
+                              # hyper-parameters for both modes
+                              m0_a = 0, k0_a = 0.01, a0_a = 0.001, b0_a = 0.001,
+                              m0_b = 0, k0_b = 0.01, a0_b = 0.001, b0_b = 0.001) {
+  
+  # posterior parameters for mode A
+  postA <- posterior_norm_inv_gamma(yA, m0_a, k0_a, a0_a, b0_a)
+  drawA <- draw_mu_sigma2(postA, R_post)
+  
+  # posterior parameters for mode B
+  postB <- posterior_norm_inv_gamma(yB, m0_b, k0_b, a0_b, b0_b)
+  drawB <- draw_mu_sigma2(postB, R_post)
+  
+  muA   <- drawA$mu
+  sig2A <- drawA$sigma2
+  muB   <- drawB$mu
+  sig2B <- drawB$sigma2
+  
+  # posterior draws of effect size g
+  g <- (muA - muB) / sqrt((sig2A + sig2B) / 2)
+  
+  list(muA = muA, sig2A = sig2A,
+       muB = muB, sig2B = sig2B,
+       g = g)
+}
+
+# common mean model (Gibbs sampler)
+bayes_common_mean <- function(yA, yB,
+                              R_post = 5000, burn_in = 1000,
+                              m0 = 0,   # prior mean of mu
+                              tau0 = 1/100,  # prior precision = 1 / w^2 (w^2 = 100)
+                              a0 = 0.001, b0 = 0.001) {
+  
+  nA <- length(yA); nB <- length(yB)
+  mA <- mean(yA);   mB <- mean(yB)
+  s2A <- var(yA);   s2B <- var(yB)
+  
+  # init value
+  mu   <- (mA + mB) / 2
+  sig2A <- s2A
+  sig2B <- s2B
+  
+  n_iter <- R_post + burn_in
+  mu_keep <- numeric(R_post)
+  
+  for (it in 1:n_iter) {
+    # 1. update mu | sig2A, sig2B, data
+    prec_mu <- tau0 + nA / sig2A + nB / sig2B
+    var_mu  <- 1 / prec_mu
+    mean_mu <- var_mu * (tau0 * m0 + nA * mA / sig2A + nB * mB / sig2B)
+    mu <- rnorm(1, mean = mean_mu, sd = sqrt(var_mu))
+    
+    # 2. update sig2A | mu, dataA
+    rssA <- sum((yA - mu)^2)
+    aA_post <- a0 + nA / 2
+    bA_post <- b0 + 0.5 * rssA
+    sig2A <- 1 / rgamma(1, shape = aA_post, rate = bA_post)
+    
+    # 3. update sig2B | mu, dataB
+    rssB <- sum((yB - mu)^2)
+    aB_post <- a0 + nB / 2
+    bB_post <- b0 + 0.5 * rssB
+    sig2B <- 1 / rgamma(1, shape = aB_post, rate = bB_post)
+    
+    # posterior sampling (ignore burn-in)
+    if (it > burn_in) {
+      mu_keep[it - burn_in] <- mu
+    }
+  }
+  
+  list(mu = mu_keep)
+}
+
+bayes_mixedmode <- function(yA, yB,
+                            prefer = c("smaller", "larger", "none"),
+                            cutoff_g = 0.95,  
+                            R_post = 5000,
+                            # hyper-parameters for different-mean model
+                            m0 = 0, k0 = 0.01, a0 = 0.001, b0 = 0.001,
+                            # hyper-parameters for common-mean model
+                            m0_common   = 0,
+                            tau0_common = 1/100,
+                            a0_common   = 0.001,
+                            b0_common   = 0.001,
+                            ci_level = 0.95     # θ 的 credible interval
+) {
+  prefer <- match.arg(prefer)
+  
+  ## ----- Step 1: posterior of effect size g under different-mean model -----
+  eff <- bayes_effect_size(
+    yA, yB,
+    R_post = R_post,
+    m0_a = m0, k0_a = k0, a0_a = a0, b0_a = b0,
+    m0_b = m0, k0_b = k0, a0_b = a0, b0_b = b0
+  )
+  g    <- eff$g
+  muA_post <- eff$muA
+  muB_post <- eff$muB
+  
+  alpha_g <- 1 - cutoff_g
+  g_low  <- quantile(g, alpha_g / 2)
+  g_high <- quantile(g, 1 - alpha_g / 2)
+  
+  ## ----- Step 2: test if there exist mode effect -----
+  # CI of g contains 0 → no mode effect → common mean model
+  if (g_low <= 0 && g_high >= 0) {
+    chosen_model <- "common_mean"
+    
+    cm <- bayes_common_mean(
+      yA, yB,
+      R_post = R_post,
+      burn_in = 1000,
+      m0   = m0_common,
+      tau0 = tau0_common,
+      a0   = a0_common,
+      b0   = b0_common
+    )
+    theta_draw <- cm$mu
+  } else {
+      # CI of g doesn't contain 0 → exist mode effect
+      if (prefer == "none") {
+        ## --------- case: no preferred direction -----------
+        chosen_model <- "pooled_modes"
+        # use Bernoulli(0.5) to decide each u using muA or muB
+        b <- rbinom(R_post, size = 1, prob = 0.5)
+        theta_draw <- ifelse(b == 1, muA_post, muB_post)
+        
+      } else if (prefer == "smaller") {
+          ## ---------- case: preferred smaller ----------
+          if (g_low > 0) {
+            # mu_A > mu_B → choose B
+            chosen_model <- "mode_B"
+            postB  <- posterior_norm_inv_gamma(yB, m0, k0, a0, b0)
+            drawB  <- draw_mu_sigma2(postB, R_post)
+            theta_draw <- drawB$mu
+          } else {
+            # g_high < 0 → mu_A < mu_B → choose A
+            chosen_model <- "mode_A"
+            postA  <- posterior_norm_inv_gamma(yA, m0, k0, a0, b0)
+            drawA  <- draw_mu_sigma2(postA, R_post)
+            theta_draw <- drawA$mu
+            }
+      
+      } else if (prefer == "larger") {
+        ## ---------- case: preferred larger ----------
+          if (g_low > 0) {
+            # mu_A > mu_B → choose A
+            chosen_model <- "mode_A"
+            postA  <- posterior_norm_inv_gamma(yA, m0, k0, a0, b0)
+            drawA  <- draw_mu_sigma2(postA, R_post)
+            theta_draw <- drawA$mu
+          } else {
+            # mu_A < mu_B → choose B
+            chosen_model <- "mode_B"
+            postB  <- posterior_norm_inv_gamma(yB, m0, k0, a0, b0)
+            drawB  <- draw_mu_sigma2(postB, R_post)
+            theta_draw <- drawB$mu
+          }
+      }
+  }
+  
+  ## ----- Step 3: compute point estimate and CI by posterior draws of θ -----
+  theta_hat <- mean(theta_draw)
+  alpha_ci  <- 1 - ci_level
+  ci <- quantile(theta_draw, c(alpha_ci/2, 1 - alpha_ci/2))
+  
+  list(
+    chosen_model = chosen_model,
+    g_low  = g_low,
+    g_high = g_high,
+    est    = theta_hat,
+    ci_lower = ci[1],
+    ci_upper = ci[2],
+    theta_draw = theta_draw
+  )
+}
+
+# -------------------- main --------------------
+theta_true <- 0
+sims_1 <- readRDS("data/scen01_rho95.rds")
+sims_2 <- readRDS("data/scen02_rho95.rds")
+sims_3 <- readRDS("data/scen03_rho95.rds")
+sims_4 <- readRDS("data/scen04_rho95.rds")
+sims_5 <- readRDS("data/scen05_rho95.rds")
+sims_6 <- readRDS("data/scen06_rho95.rds")
+sims_7 <- readRDS("data/scen07_rho95.rds")
+sims_8 <- readRDS("data/scen08_rho95.rds")
+sims_9 <- readRDS("data/scen09_rho95.rds")
+
+## ---------- scenario 1 (mu_B=0, sigma2_B=1) ----------
+R <- length(sims_1)
+est_vec   <- numeric(R)
+lower_vec <- numeric(R)
+upper_vec <- numeric(R)
+
+for (r in 1:R) {
+  fit <- bayes_mixedmode(
+    sims_1[[r]]$yA,
+    sims_1[[r]]$yB,
+    prefer   = "smaller",   
+    cutoff_g = 0.95,        
+    R_post   = 5000         
+  )
+  
+  est_vec[r]   <- fit$est
+  lower_vec[r] <- fit$ci_lower
+  upper_vec[r] <- fit$ci_upper
+}
+
+summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
+
+
