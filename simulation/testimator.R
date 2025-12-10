@@ -170,9 +170,20 @@ testimator <- function(yA, yB,
     ))
 }
 
+classify_model_testimator <- function(equal_mean, equal_var) {
+  if (!equal_mean && !equal_var) {
+    return("M1_DD")  # Different mean, Different variance
+  } else if (equal_mean && !equal_var) {
+    return("M2_SD")  # Same mean, Different variance
+  } else if (!equal_mean && equal_var) {
+    return("M3_DS")  # Different mean, Same variance
+  } else { # equal_mean && equal_var
+    return("M4_SS")  # Same mean, Same variance
+  }
+}
 # -------------------- main --------------------
 theta_true <- 0
-sims_1 <- readRDS("data/scen01_rho95.rds")
+sims_1 <- readRDS("data2/scen01_rho95.rds")
 sims_2 <- readRDS("data/scen02_rho95.rds")
 sims_3 <- readRDS("data/scen03_rho95.rds")
 sims_4 <- readRDS("data/scen04_rho95.rds")
@@ -187,14 +198,17 @@ R <- length(sims_1)
 est_vec   <- numeric(R)
 lower_vec <- numeric(R)
 upper_vec <- numeric(R)
+model_vec <- character(R)
 
 for (r in 1:R) {
   tmp <- testimator(sims_1[[r]]$yA, sims_1[[r]]$yB, prefer = "smaller")
   est_vec[r]   <- tmp$est
   lower_vec[r] <- tmp$ci_lower
   upper_vec[r] <- tmp$ci_upper
+  model_vec[r] <- classify_model_testimator(tmp$equal_mean, tmp$equal_var)
 }
 
+prop.table(table(model_vec))
 summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
 
 ## ---------- scenario 2 (mu_B=0, sigma2_B=2) ----------
@@ -203,14 +217,17 @@ R <- length(sims_2)
 est_vec   <- numeric(R)
 lower_vec <- numeric(R)
 upper_vec <- numeric(R)
+model_vec <- character(R)
 
 for (r in 1:R) {
   tmp <- testimator(sims_2[[r]]$yA, sims_2[[r]]$yB, prefer = "smaller")
   est_vec[r]   <- tmp$est
   lower_vec[r] <- tmp$ci_lower
   upper_vec[r] <- tmp$ci_upper
+  model_vec[r] <- classify_model_testimator(tmp$equal_mean, tmp$equal_var)
 }
 
+prop.table(table(model_vec))
 summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
 
 ## ---------- scenario 3 (mu_B=0.3, sigma2_B=2) ----------
@@ -219,14 +236,17 @@ R <- length(sims_3)
 est_vec   <- numeric(R)
 lower_vec <- numeric(R)
 upper_vec <- numeric(R)
+model_vec <- character(R)
 
 for (r in 1:R) {
   tmp <- testimator(sims_3[[r]]$yA, sims_3[[r]]$yB, prefer = "smaller")
   est_vec[r]   <- tmp$est
   lower_vec[r] <- tmp$ci_lower
   upper_vec[r] <- tmp$ci_upper
+  model_vec[r] <- classify_model_testimator(tmp$equal_mean, tmp$equal_var)
 }
 
+prop.table(table(model_vec))
 summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
 
 ## ---------- scenario 4 (mu_B=0.3, sigma2_B=1) ----------
@@ -234,14 +254,17 @@ R <- length(sims_4)
 est_vec   <- numeric(R)
 lower_vec <- numeric(R)
 upper_vec <- numeric(R)
+model_vec <- character(R)
 
 for (r in 1:R) {
   tmp <- testimator(sims_4[[r]]$yA, sims_4[[r]]$yB, prefer = "smaller")
   est_vec[r]   <- tmp$est
   lower_vec[r] <- tmp$ci_lower
   upper_vec[r] <- tmp$ci_upper
+  model_vec[r] <- classify_model_testimator(tmp$equal_mean, tmp$equal_var)
 }
 
+prop.table(table(model_vec))
 summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
 
 ## ---------- scenario 5 (mu_B=0.5, sigma2_B=2) ----------
