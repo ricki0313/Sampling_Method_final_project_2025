@@ -376,21 +376,26 @@ model_averaging_mixedmode <- function(
 
 # -------------------- main --------------------
 theta_true <- 0
-sims_1 <- readRDS("data/scen01_rho95.rds")
-sims_2 <- readRDS("data/scen02_rho95.rds")
-sims_3 <- readRDS("data/scen03_rho95.rds")
-sims_4 <- readRDS("data/scen04_rho95.rds")
-sims_5 <- readRDS("data/scen05_rho95.rds")
-sims_6 <- readRDS("data/scen06_rho95.rds")
-sims_7 <- readRDS("data/scen07_rho95.rds")
-sims_8 <- readRDS("data/scen08_rho95.rds")
-sims_9 <- readRDS("data/scen09_rho95.rds")
+sims_1 <- readRDS("data2/scen01_rho95.rds")
+sims_2 <- readRDS("data2/scen02_rho95.rds")
+sims_3 <- readRDS("data2/scen03_rho95.rds")
+sims_4 <- readRDS("data2/scen04_rho95.rds")
+sims_5 <- readRDS("data2/scen05_rho95.rds")
+sims_6 <- readRDS("data2/scen06_rho95.rds")
+sims_7 <- readRDS("data2/scen07_rho95.rds")
+sims_8 <- readRDS("data2/scen08_rho95.rds")
+sims_9 <- readRDS("data2/scen09_rho95.rds")
+
+# we have to draw R_post times from posterior
+set.seed(123)
 
 ## ---------- scenario 1 (mu_B=0, sigma2_B=1) ----------
 R <- length(sims_1)
 est_vec   <- numeric(R)
 lower_vec <- numeric(R)
 upper_vec <- numeric(R)
+w_mat <- matrix(NA, nrow = R, ncol = 4)
+colnames(w_mat) <- paste0("M", 1:4)
 
 for (r in 1:R) {
   fit <- model_averaging_mixedmode(
@@ -402,7 +407,178 @@ for (r in 1:R) {
   est_vec[r]   <- fit$est
   lower_vec[r] <- fit$ci_lower
   upper_vec[r] <- fit$ci_upper
+  w_mat[r, ] <- fit$weights
 }
+
+round(colMeans(w_mat),3)
+summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
+
+## ---------- scenario 2 (mu_B=0, sigma2_B=2) ----------
+R <- length(sims_2)
+est_vec   <- numeric(R)
+lower_vec <- numeric(R)
+upper_vec <- numeric(R)
+w_mat <- matrix(NA, nrow = R, ncol = 4)
+colnames(w_mat) <- paste0("M", 1:4)
+
+for (r in 1:R) {
+  fit <- model_averaging_mixedmode(
+    sims_2[[r]]$yA,
+    sims_2[[r]]$yB,
+    prefer = "smaller",
+    R_post = 5000
+  )
+  est_vec[r]   <- fit$est
+  lower_vec[r] <- fit$ci_lower
+  upper_vec[r] <- fit$ci_upper
+  w_mat[r, ] <- fit$weights
+}
+
+round(colMeans(w_mat),3)
+summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
+
+## ---------- scenario 3 (mu_B=0.3, sigma2_B=2) ----------
+R <- length(sims_3)
+est_vec   <- numeric(R)
+lower_vec <- numeric(R)
+upper_vec <- numeric(R)
+w_mat <- matrix(NA, nrow = R, ncol = 4)
+colnames(w_mat) <- paste0("M", 1:4)
+
+for (r in 1:R) {
+  fit <- model_averaging_mixedmode(
+    sims_3[[r]]$yA,
+    sims_3[[r]]$yB,
+    prefer = "smaller",
+    R_post = 5000
+  )
+  est_vec[r]   <- fit$est
+  lower_vec[r] <- fit$ci_lower
+  upper_vec[r] <- fit$ci_upper
+  w_mat[r, ] <- fit$weights
+}
+
+round(colMeans(w_mat),3)
+summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
+
+## ---------- scenario 4 (mu_B=0.3, sigma2_B=1) ----------
+R <- length(sims_4)
+est_vec   <- numeric(R)
+lower_vec <- numeric(R)
+upper_vec <- numeric(R)
+w_mat <- matrix(NA, nrow = R, ncol = 4)
+colnames(w_mat) <- paste0("M", 1:4)
+
+for (r in 1:R) {
+  fit <- model_averaging_mixedmode(
+    sims_4[[r]]$yA,
+    sims_4[[r]]$yB,
+    prefer = "smaller",
+    R_post = 5000
+  )
+  est_vec[r]   <- fit$est
+  lower_vec[r] <- fit$ci_lower
+  upper_vec[r] <- fit$ci_upper
+  w_mat[r, ] <- fit$weights
+}
+
+round(colMeans(w_mat),3)
+summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
+
+## ---------- scenario 5 (mu_B=0.5, sigma2_B=2) ----------
+R <- length(sims_5)
+est_vec   <- numeric(R)
+lower_vec <- numeric(R)
+upper_vec <- numeric(R)
+w_mat <- matrix(NA, nrow = R, ncol = 4)
+colnames(w_mat) <- paste0("M", 1:4)
+
+for (r in 1:R) {
+  fit <- model_averaging_mixedmode(
+    sims_5[[r]]$yA,
+    sims_5[[r]]$yB,
+    prefer = "smaller",
+    R_post = 5000
+  )
+  est_vec[r]   <- fit$est
+  lower_vec[r] <- fit$ci_lower
+  upper_vec[r] <- fit$ci_upper
+  w_mat[r, ] <- fit$weights
+}
+
+round(colMeans(w_mat),3)
+summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
+
+## ---------- scenario 6 (mu_B=0.5, sigma2_B=1) ----------
+R <- length(sims_6)
+est_vec   <- numeric(R)
+lower_vec <- numeric(R)
+upper_vec <- numeric(R)
+w_mat <- matrix(NA, nrow = R, ncol = 4)
+colnames(w_mat) <- paste0("M", 1:4)
+
+for (r in 1:R) {
+  fit <- model_averaging_mixedmode(
+    sims_6[[r]]$yA,
+    sims_6[[r]]$yB,
+    prefer = "smaller",
+    R_post = 5000
+  )
+  est_vec[r]   <- fit$est
+  lower_vec[r] <- fit$ci_lower
+  upper_vec[r] <- fit$ci_upper
+  w_mat[r, ] <- fit$weights
+}
+
+round(colMeans(w_mat),3)
+summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
+
+## ---------- scenario 7 (mu_B=0.7, sigma2_B=2) ----------
+R <- length(sims_7)
+est_vec   <- numeric(R)
+lower_vec <- numeric(R)
+upper_vec <- numeric(R)
+w_mat <- matrix(NA, nrow = R, ncol = 4)
+colnames(w_mat) <- paste0("M", 1:4)
+
+for (r in 1:R) {
+  fit <- model_averaging_mixedmode(
+    sims_7[[r]]$yA,
+    sims_7[[r]]$yB,
+    prefer = "smaller",
+    R_post = 5000
+  )
+  est_vec[r]   <- fit$est
+  lower_vec[r] <- fit$ci_lower
+  upper_vec[r] <- fit$ci_upper
+  w_mat[r, ] <- fit$weights
+}
+
+round(colMeans(w_mat),3)
+summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
+
+## ---------- scenario 8 (mu_B=0.7, sigma2_B=1) ----------
+R <- length(sims_8)
+est_vec   <- numeric(R)
+lower_vec <- numeric(R)
+upper_vec <- numeric(R)
+w_mat <- matrix(NA, nrow = R, ncol = 4)
+colnames(w_mat) <- paste0("M", 1:4)
+
+for (r in 1:R) {
+  fit <- model_averaging_mixedmode(
+    sims_8[[r]]$yA,
+    sims_8[[r]]$yB,
+    prefer = "smaller",
+    R_post = 5000
+  )
+  est_vec[r]   <- fit$est
+  lower_vec[r] <- fit$ci_lower
+  upper_vec[r] <- fit$ci_upper
+  w_mat[r, ] <- fit$weights
+}
+
+round(colMeans(w_mat),3)
 summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
 
 ## ---------- scenario 9 (mu_B=0.7, sigma2_B=0.5) ----------
@@ -410,6 +586,8 @@ R <- length(sims_9)
 est_vec   <- numeric(R)
 lower_vec <- numeric(R)
 upper_vec <- numeric(R)
+w_mat <- matrix(NA, nrow = R, ncol = 4)
+colnames(w_mat) <- paste0("M", 1:4)
 
 for (r in 1:R) {
   fit <- model_averaging_mixedmode(
@@ -421,7 +599,9 @@ for (r in 1:R) {
   est_vec[r]   <- fit$est
   lower_vec[r] <- fit$ci_lower
   upper_vec[r] <- fit$ci_upper
+  w_mat[r, ] <- fit$weights
 }
-summary_sim(est_vec, lower_vec, upper_vec,
-            theta_true, conf_level = 0.95)
+
+round(colMeans(w_mat),3)
+summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
 

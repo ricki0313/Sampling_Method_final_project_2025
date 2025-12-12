@@ -235,7 +235,7 @@ for (r in 1:R) {
     sims_1[[r]]$yA,
     sims_1[[r]]$yB,
     prefer   = "smaller",   
-    cutoff_g = 0.95,        
+    cutoff_g = 0.5,        
     R_post   = 5000         
   )
   
@@ -257,7 +257,7 @@ for (r in 1:R) {
     sims_2[[r]]$yA,
     sims_2[[r]]$yB,
     prefer   = "smaller",   
-    cutoff_g = 0.95,        
+    cutoff_g = 0.5,  
     R_post   = 5000         
   )
   
@@ -279,7 +279,7 @@ for (r in 1:R) {
     sims_3[[r]]$yA,
     sims_3[[r]]$yB,
     prefer   = "smaller",   
-    cutoff_g = 0.95,        
+    cutoff_g = 0.5,        
     R_post   = 5000         
   )
   
@@ -301,7 +301,7 @@ for (r in 1:R) {
     sims_4[[r]]$yA,
     sims_4[[r]]$yB,
     prefer   = "smaller",   
-    cutoff_g = 0.95,        
+    cutoff_g = 0.5,        
     R_post   = 5000         
   )
   
@@ -323,7 +323,7 @@ for (r in 1:R) {
     sims_5[[r]]$yA,
     sims_5[[r]]$yB,
     prefer   = "smaller",   
-    cutoff_g = 0.95,        
+    cutoff_g = 0.5,        
     R_post   = 5000         
   )
   
@@ -345,7 +345,7 @@ for (r in 1:R) {
     sims_6[[r]]$yA,
     sims_6[[r]]$yB,
     prefer   = "smaller",   
-    cutoff_g = 0.95,        
+    cutoff_g = 0.5,        
     R_post   = 5000         
   )
   
@@ -367,7 +367,7 @@ for (r in 1:R) {
     sims_7[[r]]$yA,
     sims_7[[r]]$yB,
     prefer   = "smaller",   
-    cutoff_g = 0.95,        
+    cutoff_g = 0.5,        
     R_post   = 5000         
   )
   
@@ -389,7 +389,7 @@ for (r in 1:R) {
     sims_8[[r]]$yA,
     sims_8[[r]]$yB,
     prefer   = "smaller",   
-    cutoff_g = 0.95,        
+    cutoff_g = 0.5,        
     R_post   = 5000         
   )
   
@@ -411,7 +411,7 @@ for (r in 1:R) {
     sims_9[[r]]$yA,
     sims_9[[r]]$yB,
     prefer   = "smaller",   
-    cutoff_g = 0.95,        
+    cutoff_g = 0.5,        
     R_post   = 5000         
   )
   
@@ -421,3 +421,4 @@ for (r in 1:R) {
 }
 
 summary_sim(est_vec, lower_vec, upper_vec, theta_true, conf_level = 0.95)
+
