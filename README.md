@@ -36,6 +36,7 @@ The files in this project are organized by stages and should be run in the follo
 - `simulation/bayes.R`
 - `simulation/model_averaging.R`
 
+## Report
 1. The note of the paper is summarized in `note.pdf`.
 2. The replication of part simlation is summarized in `sim_reproduce_report.pdf`.
 3. The briefing report of this study is summarized in `study_briefing.pdf`
