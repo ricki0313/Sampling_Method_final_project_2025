@@ -1,4 +1,12 @@
 simulation/data_generation.R
 simulation/data_generation_3.R
 simulation/.RData
-simulation/data2/
+simulation/data2/scen01_rho95.rds
+simulation/data2/scen02_rho95.rds
+simulation/data2/scen03_rho95.rds
+simulation/data2/scen04_rho95.rds
+simulation/data2/scen05_rho95.rds
+simulation/data2/scen06_rho95.rds
+simulation/data2/scen07_rho95.rds
+simulation/data2/scen08_rho95.rds
+simulation/data2/scen09_rho95.rds

@@ -234,7 +234,7 @@ log_marginal_M2 <- function(yA, yB,
     log_mA + log_mB + log_prior
   }
   
-  # 在 posterior mass 最大附近做穩定化，避免 underflow
+  # Stabilize the computation around the region where the posterior mass is maximized to avoid underflow.
   mu0 <- m_all
   C   <- log_f(mu0)
   
@@ -242,7 +242,7 @@ log_marginal_M2 <- function(yA, yB,
     exp(log_f(mu) - C)
   }
   
-  # 积分範圍用 prior 的 ±10 sd（幾乎包含所有 mass）
+  # Set the integration range to the prior mean ±10 standard deviations
   L <- 10 * sqrt(phi2_mu)
   res <- integrate(integrand,
                    lower = mu0 - L,
@@ -271,7 +271,7 @@ model_averaging_mixedmode <- function(
   
   prefer <- match.arg(prefer)
   
-  ## ----- Step 1: 四個模型的 marginal likelihood (log scale) -----
+  ## ----- Step 1: marginal likelihood (log scale) of 4 models -----
   log_m1 <- log_marginal_M1(
     yA, yB,
     m0_a = m0, k0_a = k0, a0_a = a0, b0_a = b0,
@@ -301,14 +301,14 @@ model_averaging_mixedmode <- function(
   
   log_m_vec <- c(log_m1, log_m2, log_m3, log_m4)
   
-  # 為了數值穩定：減掉最大 log，再 exponentiate
+  # For numerical stability, subtract the maximum log value before exponentiating
   log_m_shift <- log_m_vec - max(log_m_vec)
   w_raw <- exp(log_m_shift)
   w <- w_raw / sum(w_raw)
   names(w) <- paste0("M", 1:4)
   
-  ## ----- Step 2: 在「不同 mean 模型」與「共同 mean 模型」下抽 posterior -----
-  # 不同 mean 模型的 posterior draws (M1 & M3 共用這一組)
+  ## ----- Step 2: draw posterior from common & different means model-----
+  # posterior draws of different means model(M1 & M3)
   eff <- bayes_effect_size(
     yA, yB,
     R_post = R_post,
@@ -318,7 +318,7 @@ model_averaging_mixedmode <- function(
   muA_post <- eff$muA
   muB_post <- eff$muB
   
-  # 共同 mean 模型的 posterior draws (M2 & M4 共用)
+  # posterior draws of common means model(M2 & M4)
   cm <- bayes_common_mean(
     yA, yB,
     R_post  = R_post, burn_in = 1000,
@@ -329,20 +329,20 @@ model_averaging_mixedmode <- function(
   )
   mu_common <- cm$mu
   
-  ## ----- Step 3: 依照模型權重抽 M，再決定每一次的 θ_draw -----
+  ## ----- Step 3: sample M according to the model weights, and then determine θ_draw -----
   theta_draw <- numeric(R_post)
   model_draw <- integer(R_post)
   
   for (r in 1:R_post) {
     
-    # 抽 model index: 1~4
+    # draw model index: 1~4
     m_id <- sample(1:4, size = 1, prob = w)
     model_draw[r] <- m_id
     
     if (m_id %in% c(1, 3)) {
-      # M1 or M3: 不同 mean 模型
+      # M1 or M3: common mean model
       if (prefer == "none") {
-        # 沒有偏好，A/B 各 0.5 機率
+        # no prefer direction
         chooseA <- rbinom(1, size = 1, prob = 0.5)
         theta_r <- if (chooseA == 1) muA_post[r] else muB_post[r]
       } else if (prefer == "smaller") {
@@ -351,22 +351,22 @@ model_averaging_mixedmode <- function(
         theta_r <- max(muA_post[r], muB_post[r])
       }
     } else {
-      # M2 or M4: 共同 mean 模型
+      # M2 or M4: common mean model
       theta_r <- mu_common[r]
     }
     
     theta_draw[r] <- theta_r
   }
   
-  ## ----- Step 4: 用 θ_draw 做推論 -----
+  ## ----- Step 4:  inference by θ_draw -----
   
   theta_hat <- mean(theta_draw)
   alpha_ci  <- 1 - ci_level
   ci        <- quantile(theta_draw, c(alpha_ci/2, 1 - alpha_ci/2))
   
   list(
-    weights    = w,           # M1–M4 權重
-    model_draw = model_draw,  # 每次抽到哪個 model
+    weights    = w,           # M1–M4 weight
+    model_draw = model_draw,  # model for each draw
     est        = theta_hat,
     ci_lower   = ci[1],
     ci_upper   = ci[2],

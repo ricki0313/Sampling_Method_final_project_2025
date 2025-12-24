@@ -21,11 +21,10 @@ summary_sim <- function(est, lower, upper, theta_true, conf_level = 0.95) {
   covered <- (lower <= theta_true) & (theta_true <= upper)
   coverage <- mean(covered)
   
-  ## 4. Actual interval length (平均的 upper - lower)
+  ## 4. Actual interval length (the mean of upper - lower)
   actual_len <- mean(upper - lower)
   
   ## 5. Expected interval length
-  # 用模擬出來的 estimator 分佈的 sd，乘上理論 z critical
   sd_est <- sd(est)
   z_crit <- qnorm(1 - alpha/2)
   expected_len <- 2 * z_crit * sd_est
